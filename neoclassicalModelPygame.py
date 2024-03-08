@@ -1,5 +1,23 @@
+import pygame
 import numpy as np
 
+##################
+# pygame setup
+##################
+pygame.init()
+screen = pygame.display.set_mode((1280, 720))
+clock = pygame.time.Clock()
+running = True
+dt = 0
+
+# Fonts
+my_font = pygame.font.SysFont('Comic Sans MS', 30)
+##################
+
+
+##################
+# economy setup
+##################
 # Set the number of scenarios (including baseline)
 S = 6
 
@@ -44,6 +62,7 @@ Gf = 1  # Future government spending
 
 # Initialize endogenous variables at arbitrary positive values
 w = C = I = Y = r = N = P = 1 
+##################
 
 def iterate_economy(i, A, a, K, N, I, leisure, discount_rate, money_pref, G0, Yf, Gf, r):
         '''
@@ -87,94 +106,72 @@ def iterate_economy(i, A, a, K, N, I, leisure, discount_rate, money_pref, G0, Yf
 
         return Y, w, N, C, r, I, rn, P
 
-# Solve this system numerically through 1000 iterations based on the initialization
-for i in range(S):
-    for iterations in range(1000):
-        Y, w, N, C, r, I, rn, P = iterate_economy(i, A, a, K, N, I, leisure, discount_rate, money_pref, G0, Yf, Gf, r)
-
-    # Save results for different parameterizations in the arrays
-    Y_star[i] = Y
-    w_star[i] = w
-    C_star[i] = C
-    I_star[i] = I
-    r_star[i] = r
-    N_star[i] = N
-    P_star[i] = P
-    rn_star[i] = rn
-
-    # Print some results after the 1000 simulation
-    print(Y)
-
-# Plot results (here for output only)
-# See code examples in R for plotting other results: https://macrosimulation.org/a_neoclassical_macro_model
-import matplotlib.pyplot as plt
-
-scenario_names = ["1: Baseline", "2: Increase in M0", "3: Increase in G0", 
-                  "4: Increase in A", "5: Decrease in Yf", "6: Increase in b1"]
-
-# Output
-plt.bar(scenario_names , Y_star)
-plt.ylabel('Y')
-plt.xticks(rotation=45, ha="right")  # Rotate x-axis labels for better readability
-plt.tight_layout()  # Ensure the labels fit within the plot area
-plt.show()
-
-plt.bar(scenario_names , N_star)
-plt.ylabel('N')
-plt.xticks(rotation=45, ha="right")  # Rotate x-axis labels for better readability
-plt.tight_layout()  # Ensure the labels fit within the plot area
-plt.show()
 
 
-import networkx as nx
-import matplotlib.pyplot as plt
-import numpy as np
+for sim_no in range(S):
 
-# Construct the auxiliary Jacobian matrix
-M_mat = np.array([
-    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0],
-    [0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-    [1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0]
-])
+    # User is closing pygame
+    if not running:
+        break
 
-# Create adjacency matrix from transpose of auxiliary Jacobian and add column names
-A_mat = M_mat.transpose()
+    # Count number of iterations for this simulation
+    interation_count = 0
+    is_iter = False
+    in_sim = True
 
-# Create the graph from the adjacency matrix
-G = nx.DiGraph(A_mat)
+    while in_sim and running:
 
-# Define node labels
-nodelabs = {
-    0: "Y",
-    1: "w",
-    2: "N",
-    3: "C",
-    4: "I",
-    5: "r",
-    6: "P",
-    7: r"$r_n$",
-    8: r"$M_0$",
-    9: r"$G_0$",
-    10: "A",
-    11: r"$Y^f$",
-    12: r"$M_d$"
-}
+        # poll for events
+        # pygame.QUIT event means the user clicked X to close your window
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    print("Space bar pressed!")
+                    is_iter = True
+                if event.key == pygame.K_e:
+                    print("e pressed!")
+                    in_sim = False
+            
+            # Player has triggered an iteration
+            if is_iter:
+                # Run economy updates
+                Y, w, N, C, r, I, rn, P = iterate_economy(sim_no, A, a, K, N, I, leisure, discount_rate, money_pref, G0, Yf, Gf, r)
+                # Save results for different parameterizations in the arrays
+                Y_star[sim_no] = Y
+                w_star[sim_no] = w
+                C_star[sim_no] = C
+                I_star[sim_no] = I
+                r_star[sim_no] = r
+                N_star[sim_no] = N
+                P_star[sim_no] = P
+                rn_star[sim_no] = rn
+                
+                interation_count += 1
+                # Wait for next iteration from player
+                is_iter = False
 
-# Plot the directed graph
-pos = nx.spring_layout(G, seed=42)  
-nx.draw(G, pos, with_labels=True, labels=nodelabs, node_size=300, node_color='lightblue', 
-        font_size=10)
-edge_labels = {(u, v): '' for u, v in G.edges}
-nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color='black')
-plt.axis('off')
-plt.show()
+            # fill the screen with a color to wipe away anything from last frame
+            screen.fill("purple")
+
+            # Update economic visuals
+            #Add simple text
+            iterate_text_surface = my_font.render('Press the space bar to iterate the economy', True, (255, 255, 255))
+            Y_text_surface = my_font.render('Y: ' + str(Y_star[sim_no]), True, (255, 255, 255))
+            iter_text_surface = my_font.render('Iteration number: ' + str(interation_count), True, (255, 255, 255))
+
+            # Render text on the page at the specified positions
+            screen.blit(iterate_text_surface, (50, 10)) 
+            screen.blit(Y_text_surface, (50, 100)) 
+            screen.blit(iter_text_surface, (50, 600)) 
+
+            # flip() the display to put your work on screen
+            pygame.display.flip()
+
+        # limits FPS to 60
+        # dt is delta time in seconds since last frame, used for framerate-
+        # independent physics.
+        dt = clock.tick(60) / 1000
+
+pygame.quit()
