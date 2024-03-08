@@ -181,20 +181,23 @@ for sim_no in range(S):
 
             # Add simple text
             iterate_text_surface = my_font.render('Press the space bar to iterate the economy', True, (255, 255, 255))
+            sim_text_surface = my_font.render(scenario_names[sim_no], True, (255, 255, 255))
             Y_text_surface = my_font.render('Y: ' + str(Y_star[sim_no]), True, (255, 255, 255))
             iter_text_surface = my_font.render('Iteration number: ' + str(iteration_count), True, (255, 255, 255))
 
             # Render text on the page at the specified positions
             screen.blit(iterate_text_surface, (50, 10)) 
-            screen.blit(Y_text_surface, (50, 100)) 
+            screen.blit(sim_text_surface, (50, 100)) 
+            screen.blit(Y_text_surface, (50, 150)) 
             screen.blit(iter_text_surface, (50, 600)) 
 
             if (iteration_count > 0):
                 plt.plot(Y_star_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
                 plt.xlabel("Time")
                 plt.ylabel("Y")
-                plt.title("Figure 2: Output", fontsize=10)
-                fig = plt.figure("Figure 2: Output")
+                plt_title = scenario_names[sim_no] + ": Output"
+                plt.title(plt_title, fontsize=10)
+                fig = plt.figure(plt_title)
                 fig.set_size_inches(5, 4)
 
                 canvas = agg.FigureCanvasAgg(fig)
@@ -206,7 +209,6 @@ for sim_no in range(S):
 
                 surf = pygame.image.fromstring(raw_data, size, "RGB")
                 screen.blit(surf, (800,0))
-                pygame.display.flip()
             ##########################
 
             # flip() the display to put your work on screen
