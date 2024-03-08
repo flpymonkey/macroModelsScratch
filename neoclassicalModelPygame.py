@@ -16,10 +16,25 @@ my_font = pygame.font.SysFont('Comic Sans MS', 30)
 
 
 ##################
+# Matplotlib setup
+# Within pygame, see article here:
+# 
+##################
+import matplotlib
+matplotlib.use("Agg")
+
+import matplotlib.backends.backend_agg as agg
+import matplotlib.pyplot as plt
+##################
+
+
+##################
 # economy setup
 ##################
 # Set the number of scenarios (including baseline)
 S = 6
+scenario_names = ["1: Baseline", "2: Increase in M0", "3: Increase in G0", 
+                  "4: Increase in A", "5: Decrease in Yf", "6: Increase in b1"]
 
 # Create arrays to store equilibrium solutions from different parameterizations
 Y_star = np.empty(S)  # Income/output
@@ -106,8 +121,6 @@ def iterate_economy(i, A, a, K, N, I, leisure, discount_rate, money_pref, G0, Yf
 
         return Y, w, N, C, r, I, rn, P
 
-
-
 for sim_no in range(S):
 
     # User is closing pygame
@@ -115,9 +128,14 @@ for sim_no in range(S):
         break
 
     # Count number of iterations for this simulation
-    interation_count = 0
+    iteration_count = 0
     is_iter = False
     in_sim = True
+
+    # Used for plotting the simulation over time
+    Y_star_time = []
+    # Append initial value
+    Y_star_time.append(Y)
 
     while in_sim and running:
 
@@ -147,24 +165,49 @@ for sim_no in range(S):
                 N_star[sim_no] = N
                 P_star[sim_no] = P
                 rn_star[sim_no] = rn
-                
-                interation_count += 1
+
+
+                Y_star_time.append(Y)
+                iteration_count += 1
                 # Wait for next iteration from player
                 is_iter = False
 
             # fill the screen with a color to wipe away anything from last frame
             screen.fill("purple")
 
+            #########################
             # Update economic visuals
-            #Add simple text
+            #########################
+
+            # Add simple text
             iterate_text_surface = my_font.render('Press the space bar to iterate the economy', True, (255, 255, 255))
             Y_text_surface = my_font.render('Y: ' + str(Y_star[sim_no]), True, (255, 255, 255))
-            iter_text_surface = my_font.render('Iteration number: ' + str(interation_count), True, (255, 255, 255))
+            iter_text_surface = my_font.render('Iteration number: ' + str(iteration_count), True, (255, 255, 255))
 
             # Render text on the page at the specified positions
             screen.blit(iterate_text_surface, (50, 10)) 
             screen.blit(Y_text_surface, (50, 100)) 
             screen.blit(iter_text_surface, (50, 600)) 
+
+            if (iteration_count > 0):
+                plt.plot(Y_star_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
+                plt.xlabel("Time")
+                plt.ylabel("Y")
+                plt.title("Figure 2: Output", fontsize=10)
+                fig = plt.figure("Figure 2: Output")
+                fig.set_size_inches(5, 4)
+
+                canvas = agg.FigureCanvasAgg(fig)
+                canvas.draw()
+                renderer = canvas.get_renderer()
+                raw_data = renderer.tostring_rgb()
+
+                size = canvas.get_width_height()
+
+                surf = pygame.image.fromstring(raw_data, size, "RGB")
+                screen.blit(surf, (800,0))
+                pygame.display.flip()
+            ##########################
 
             # flip() the display to put your work on screen
             pygame.display.flip()
