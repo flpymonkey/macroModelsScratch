@@ -33,99 +33,102 @@ import matplotlib.pyplot as plt
 ##################
 # Set the number of scenarios (including baseline)
 S = 6
-scenario_names = ["1: Baseline", "2: Increase in M0", "3: Increase in G0", 
-                  "4: Increase in A", "5: Decrease in Yf", "6: Increase in b1"]
+scenario_names = ["1:Baseline", "2:Fall animal spirits", "3:Rise product.",
+                                              "4:Rise exp. price", "5:Monetary expan.", "6:Fiscal expan."]
 
 # Create arrays to store equilibrium solutions from different parameterizations
 Y_star = np.empty(S)  # Income/output
-w_star = np.empty(S)  # Real wage
 C_star = np.empty(S)  # Consumption
 I_star = np.empty(S)  # Investment
 r_star = np.empty(S)  # Real interest rate
-rn_star = np.empty(S)  # Nominal interest rate
 N_star = np.empty(S)  # Employment
+U_star = np.empty(S)  # Unemployment rate
 P_star = np.empty(S)  # Price level
+w_star = np.empty(S)  # Real wage
+W_star = np.empty(S)  # Nominal wage
 
-# Create and parameterize exogenous variables/parameters that will be shifted
+# Set exogenous variables that will be shifted
+i0 = np.zeros(S)  # Autonomous investment (animal spirits)
 M0 = np.zeros(S)  # Money supply
-G0 = np.zeros(S)  # Government expenditures
-A = np.zeros(S)   # Productivity
-Yf = np.zeros(S)  # Expected future income
-leisure = np.zeros(S)  # Household preference for leisure (b1)
+G0 = np.zeros(S)  # Government spending
+P0 = np.zeros(S)  # Expected price level
+A = np.empty(S)  # Exogenous productivity
 
-# Baseline parameterisation
+# Construct different scenarios
+# baseline
+A[:] = 2
+i0[:] = 2
 M0[:] = 5
 G0[:] = 1
-A[:] = 2
-Yf[:] = 1
-leisure[:] = 0.4
+P0[:] = 1
 
-# Set parameter values for different scenarios
-M0[1] = 6   # Scenario 2: monetary expansion
-G0[2] = 2   # Scenario 3: fiscal expansion
-A[3] = 2.5  # Scenario 4: productivity boost
-Yf[4] = 0.2  # Scenario 5: lower expected future income
-leisure[5] = 0.8  # Scenario 6: increased preference for leisure
+# scenario 2: fall in animal spirits
+i0[1] = 1.5
+
+# scenario 3: increase in productivity
+A[2] = 3
+
+# scenario 4: increase in expected price level
+P0[3] = 1.5
+
+# scenario 5: monetary expansion
+M0[4] = 6
+
+# scenario 6: fiscal expansion
+G0[5] = 2
 
 # Set constant parameter values
+c0 = 2  # Autonomous consumption
+c1 = 0.6  # Sensitivity of consumption with respect to income (marginal propensity to consume)
+i1 = 0.1  # Sensitivity of investment with respect to the interest rate
+m1 = 0.2  # Sensitivity of money demand with respect to income
+m2 = 0.4  # Sensitivity of money demand with respect to interest rate
+Nf = 5  # Full employment/labor force
+K = 4  # Exogenous capital stock
 a = 0.3  # Capital elasticity of output
-discount_rate = 0.9  # Discount rate
-money_pref = 0.6  # Household preference for money
-K = 5  # Exogenous capital stock
-pe = 0.02  # Expected rate of inflation
-Gf = 1  # Future government spending
+b = 0.4  # Household preference for leisure
+T0 = 1  # Tax revenues
+m0 = 6  # Liquidity preference
 
-# Initialize endogenous variables at arbitrary positive values
-w = C = I = Y = r = N = P = 1 
+# Initialize endogenous variables at some arbitrary positive value
+Y = C = I = r = P = w = N = W = 1
 ##################
 
 ##################
 # Show graph of the economy
-# https://macrosimulation.org/a_neoclassical_macro_model#directed-graph
+# https://macrosimulation.org/a_neoclassical_synthesis_model_is_lm_as_ad#directed-graph
 ##################
 
-def iterate_economy(i, A, a, K, N, I, leisure, discount_rate, money_pref, G0, Yf, Gf, r, M0):
-        '''
-        i: Simulation index
-        A: Productivity shifter
-        a: Capital elasticity of output
-        K: Exogenous capital stock
-        N: Labour supply
-        I: Investment
-        leisure: Household preference for leisure
-        discount_rate: ??????????????
-        money_pref: Household preference for money ????????????
-        G0: Government expenditures
-        Yf: Expected future income
-        Gf: Future government spending
-        r: Real interest rate ?
-        M0: Money supply
-        '''
-        # (1) Cobb-Douglas production function
-        Y = A[i] * (K**a) * N**(1-a)
+def iterate_economy(sim_no, C, I, G0, c0, c1, Y, T0, i0, i1, r, M0, P, m2, m1, N, Nf, A, a, K, P0, b):
+        # Model equations
+        # Goods market equilibrium
+        Y = C + I + G0[sim_no]
 
-        # (2) Labour demand
-        w = A[i] * (1-a) * (K**a) * N**(-a)
+        # Consumption demand
+        C = c0 + c1 * (Y - T0)
 
-        # (3) Labour supply
-        N = 1 - (leisure[i]) / w
+        # Investment demand
+        I = i0[sim_no] - i1 * r
 
-        # (4) Consumption demand
-        C = (1 / (1 + discount_rate + money_pref)) * (Y - G0[i] + (Yf[i] - Gf) / (1 + r) - leisure[i] * (discount_rate + money_pref) * np.log(leisure[i] / w))
+        # Money market, solved for interest rate
+        r = (m0 - (M0[sim_no] / P)) / m2 + m1 * Y / m2
 
-        # (5) Investment demand, solved for r
-        r = (I**(a-1)) * a * A[i] * N**(1-a)
+        # Unemployment rate
+        U = 1 - N / Nf
 
-        # (6) Goods market equilibrium condition, solved for I
-        I = Y - C - G0[i]
+        # Real wage
+        w = A[sim_no] * (1 - a) * (K ** a) * (N ** (-a))
 
-        # (7) Nominal interest rate
-        rn = r + pe
+        # Nominal wage
+        W = (P0[sim_no] * b * C) / (1 - (N / Nf))
 
-        # (8) Price level
-        P = (M0[i] * rn) / ((1 + rn) * money_pref * C)
+        # Price level
+        P = W / w
 
-        return Y, w, N, C, r, I, rn, P
+        # Employment
+        N = (Y / (A[sim_no] * (K ** a))) ** (1 / (1 - a))
+
+        return Y, C, I, r, U, w, W, P, N
 
 for sim_no in range(S):
 
@@ -169,10 +172,10 @@ for sim_no in range(S):
                     in_sim = False
                 if event.key == pygame.K_w:
                     print("w pressed!")
-                    leisure[sim_no] += 0.1
+                    i0[sim_no] += 0.1
                 if event.key == pygame.K_s:
                     print("s pressed!")
-                    leisure[sim_no] -= 0.1
+                    i0[sim_no] -= 0.1
                 if event.key == pygame.K_e:
                     print("e pressed!")
                     A[sim_no] += 0.1
@@ -195,7 +198,7 @@ for sim_no in range(S):
             # Player has triggered an iteration
             if is_iter:
                 # Run economy updates
-                Y, w, N, C, r, I, rn, P = iterate_economy(sim_no, A, a, K, N, I, leisure, discount_rate, money_pref, G0, Yf, Gf, r, M0)
+                Y, C, I, r, U, w, W, P, N = iterate_economy(sim_no, C, I, G0, c0, c1, Y, T0, i0, i1, r, M0, P, m2, m1, N, Nf, A, a, K, P0, b)
                 # Save results for different parameterizations in the arrays
                 Y_star[sim_no] = Y
                 w_star[sim_no] = w
@@ -204,7 +207,6 @@ for sim_no in range(S):
                 r_star[sim_no] = r
                 N_star[sim_no] = N
                 P_star[sim_no] = P
-                rn_star[sim_no] = rn
 
                 C_time.append(C)
                 P_time.append(P)
@@ -226,7 +228,7 @@ for sim_no in range(S):
             iterate_text_surface = my_font.render('Press the space bar to iterate the economy', True, (255, 255, 255))
             sim_text_surface = my_font.render(scenario_names[sim_no], True, (255, 255, 255))
             Y_text_surface = my_font.render('Y: ' + str(Y_star[sim_no]), True, (255, 255, 255))
-            leisure_text_surface = my_font.render('leisure prefrence: ' + str(leisure[sim_no]), True, (255, 255, 255))
+            i0_text_surface = my_font.render('Autonomous investment: ' + str(i0[sim_no]), True, (255, 255, 255))
             A_text_surface = my_font.render('Productivity shifter: ' + str(A[sim_no]), True, (255, 255, 255))
             G0_text_surface = my_font.render('Government expenditure: ' + str(G0[sim_no]), True, (255, 255, 255))
             M0_text_surface = my_font.render('Money supply: ' + str(M0[sim_no]), True, (255, 255, 255))
@@ -236,7 +238,7 @@ for sim_no in range(S):
             screen.blit(iterate_text_surface, (50, 10)) 
             screen.blit(sim_text_surface, (50, 100)) 
             screen.blit(Y_text_surface, (50, 150))
-            screen.blit(leisure_text_surface, (50, 200))
+            screen.blit(i0_text_surface, (50, 200))
             screen.blit(A_text_surface, (50, 250))
             screen.blit(G0_text_surface, (50, 300)) 
             screen.blit(M0_text_surface, (50, 350)) 
