@@ -58,21 +58,6 @@ G0[1, s:max_iter] = 6  # scenario: permanent increase in government spending fro
 ##################
 
 def iterate_economy(C, I , c1, G0, beta, i, t):
-        '''
-        i: Simulation index
-        A: Productivity shifter
-        a: Capital elasticity of output
-        K: Exogenous capital stock
-        N: Labour supply
-        I: Investment
-        leisure: Household preference for leisure
-        discount_rate: ??????????????
-        money_pref: Household preference for money ????????????
-        G0: Government expenditures
-        Yf: Expected future income
-        Gf: Future government spending
-        r: Real interest rate ?
-        '''
         C[i, t] = c1 * (C[i, t - 1] + I[i, t - 1] + G0[i, t - 1])
         I[i, t] = beta * (c1 * (C[i, t - 1] + I[i, t - 1] + G0[i, t - 1]) - 
                           C[i, t - 1])
@@ -104,7 +89,12 @@ for sim_no in range(S):
                 if event.key == pygame.K_e:
                     print("e pressed!")
                     in_sim = False
-            
+                if event.key == pygame.K_w:
+                    print("w pressed!")
+                    beta += 0.1
+                if event.key == pygame.K_s:
+                    print("s pressed!")
+                    beta -= 0.1
             # Player has triggered an iteration
             if is_iter:
                 # Run economy updates

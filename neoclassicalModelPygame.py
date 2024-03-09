@@ -5,7 +5,7 @@ import numpy as np
 # pygame setup
 ##################
 pygame.init()
-screen = pygame.display.set_mode((1280, 720))
+screen = pygame.display.set_mode((1720, 980))
 clock = pygame.time.Clock()
 running = True
 dt = 0
@@ -79,7 +79,7 @@ Gf = 1  # Future government spending
 w = C = I = Y = r = N = P = 1 
 ##################
 
-def iterate_economy(i, A, a, K, N, I, leisure, discount_rate, money_pref, G0, Yf, Gf, r):
+def iterate_economy(i, A, a, K, N, I, leisure, discount_rate, money_pref, G0, Yf, Gf, r, M0):
         '''
         i: Simulation index
         A: Productivity shifter
@@ -94,6 +94,7 @@ def iterate_economy(i, A, a, K, N, I, leisure, discount_rate, money_pref, G0, Yf
         Yf: Expected future income
         Gf: Future government spending
         r: Real interest rate ?
+        M0: Money supply
         '''
         # (1) Cobb-Douglas production function
         Y = A[i] * (K**a) * N**(1-a)
@@ -134,11 +135,13 @@ for sim_no in range(S):
 
     # Used for plotting the simulation over time
     Y_time = []
+    P_time = []
     C_time = []
     I_time = []
 
     # Append initial value
     Y_time.append(Y)
+    P_time.append(P)
     C_time.append(C)
     I_time.append(I)
 
@@ -153,14 +156,39 @@ for sim_no in range(S):
                 if event.key == pygame.K_SPACE:
                     print("Space bar pressed!")
                     is_iter = True
+                if event.key == pygame.K_q:
+                    print("q pressed!")
+                    print("Simulation ended")
+                    in_sim = False
+                if event.key == pygame.K_w:
+                    print("w pressed!")
+                    leisure[sim_no] += 0.1
+                if event.key == pygame.K_s:
+                    print("s pressed!")
+                    leisure[sim_no] -= 0.1
                 if event.key == pygame.K_e:
                     print("e pressed!")
-                    in_sim = False
+                    A[sim_no] += 0.1
+                if event.key == pygame.K_d:
+                    print("d pressed!")
+                    A[sim_no] -= 0.1
+                if event.key == pygame.K_r:
+                    print("r pressed!")
+                    G0[sim_no] += 0.1
+                if event.key == pygame.K_f:
+                    print("f pressed!")
+                    G0[sim_no] -= 0.1
+                if event.key == pygame.K_t:
+                    print("t pressed!")
+                    M0[sim_no] += 0.1
+                if event.key == pygame.K_g:
+                    print("g pressed!")
+                    M0[sim_no] -= 0.1
             
             # Player has triggered an iteration
             if is_iter:
                 # Run economy updates
-                Y, w, N, C, r, I, rn, P = iterate_economy(sim_no, A, a, K, N, I, leisure, discount_rate, money_pref, G0, Yf, Gf, r)
+                Y, w, N, C, r, I, rn, P = iterate_economy(sim_no, A, a, K, N, I, leisure, discount_rate, money_pref, G0, Yf, Gf, r, M0)
                 # Save results for different parameterizations in the arrays
                 Y_star[sim_no] = Y
                 w_star[sim_no] = w
@@ -172,6 +200,7 @@ for sim_no in range(S):
                 rn_star[sim_no] = rn
 
                 C_time.append(C)
+                P_time.append(P)
                 I_time.append(I)
                 Y_time.append(Y)
                 iteration_count += 1
@@ -189,15 +218,25 @@ for sim_no in range(S):
             iterate_text_surface = my_font.render('Press the space bar to iterate the economy', True, (255, 255, 255))
             sim_text_surface = my_font.render(scenario_names[sim_no], True, (255, 255, 255))
             Y_text_surface = my_font.render('Y: ' + str(Y_star[sim_no]), True, (255, 255, 255))
+            leisure_text_surface = my_font.render('leisure prefence: ' + str(leisure[sim_no]), True, (255, 255, 255))
+            A_text_surface = my_font.render('Productivity shifter: ' + str(A[sim_no]), True, (255, 255, 255))
+            G0_text_surface = my_font.render('Government expenditure: ' + str(G0[sim_no]), True, (255, 255, 255))
+            M0_text_surface = my_font.render('Money supply: ' + str(M0[sim_no]), True, (255, 255, 255))
             iter_text_surface = my_font.render('Iteration number: ' + str(iteration_count), True, (255, 255, 255))
 
             # Render text on the page at the specified positions
             screen.blit(iterate_text_surface, (50, 10)) 
             screen.blit(sim_text_surface, (50, 100)) 
-            screen.blit(Y_text_surface, (50, 150)) 
+            screen.blit(Y_text_surface, (50, 150))
+            screen.blit(leisure_text_surface, (50, 200))
+            screen.blit(A_text_surface, (50, 250))
+            screen.blit(G0_text_surface, (50, 300)) 
+            screen.blit(M0_text_surface, (50, 350)) 
             screen.blit(iter_text_surface, (50, 600)) 
 
             if (iteration_count > 0):
+
+                ## TODO need to fix these ugly plots!!!!!!!!
                 # Plot output
                 plt.plot(Y_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
                 plt.xlabel("Time")
@@ -205,7 +244,8 @@ for sim_no in range(S):
                 plt_title = scenario_names[sim_no] + ": Output"
                 plt.title(plt_title, fontsize=10)
                 fig = plt.figure(plt_title)
-                fig.set_size_inches(5, 4)
+                fig.set_figwidth(5)
+                fig.set_figheight(4)
 
                 canvas = agg.FigureCanvasAgg(fig)
                 canvas.draw()
@@ -215,7 +255,7 @@ for sim_no in range(S):
                 size = canvas.get_width_height()
 
                 surf = pygame.image.fromstring(raw_data, size, "RGB")
-                screen.blit(surf, (800,0))
+                screen.blit(surf, (1200,0))
 
                 # Plot consumption
                 plt.plot(C_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
@@ -224,7 +264,8 @@ for sim_no in range(S):
                 plt_title = scenario_names[sim_no] + ": Consumption"
                 plt.title(plt_title, fontsize=10)
                 fig = plt.figure(plt_title)
-                fig.set_size_inches(4, 3)
+                fig.set_figwidth(5)
+                fig.set_figheight(4)
 
                 canvas = agg.FigureCanvasAgg(fig)
                 canvas.draw()
@@ -233,8 +274,8 @@ for sim_no in range(S):
 
                 size = canvas.get_width_height()
 
-                surf = pygame.image.fromstring(raw_data, size, "RGB")
-                screen.blit(surf, (900,400))
+                surf = pygame.image.fromstring(raw_data, (size), "RGB")
+                screen.blit(surf, (1200,400))
 
                 # Plot investment
                 plt.plot(I_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
@@ -243,7 +284,8 @@ for sim_no in range(S):
                 plt_title = scenario_names[sim_no] + ": Investment"
                 plt.title(plt_title, fontsize=10)
                 fig = plt.figure(plt_title)
-                fig.set_size_inches(4, 3)
+                fig.set_figwidth(5)
+                fig.set_figheight(4)
 
                 canvas = agg.FigureCanvasAgg(fig)
                 canvas.draw()
@@ -253,7 +295,29 @@ for sim_no in range(S):
                 size = canvas.get_width_height()
 
                 surf = pygame.image.fromstring(raw_data, size, "RGB")
-                screen.blit(surf, (450,400))
+                surf = pygame.transform.scale(surf, (400, 360))
+                screen.blit(surf, (800,100))
+
+                # Plot price level
+                plt.plot(P_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
+                plt.xlabel("Time")
+                plt.ylabel("Price")
+                plt_title = scenario_names[sim_no] + ": Price"
+                plt.title(plt_title, fontsize=10)
+                fig = plt.figure(plt_title)
+                fig.set_figwidth(5)
+                fig.set_figheight(4)
+
+                canvas = agg.FigureCanvasAgg(fig)
+                canvas.draw()
+                renderer = canvas.get_renderer()
+                raw_data = renderer.tostring_rgb()
+
+                size = canvas.get_width_height()
+
+                surf = pygame.image.fromstring(raw_data, size, "RGB")
+                surf = pygame.transform.scale(surf, (400, 360))
+                screen.blit(surf, (800,460))
             ##########################
 
             # flip() the display to put your work on screen
