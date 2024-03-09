@@ -133,9 +133,14 @@ for sim_no in range(S):
     in_sim = True
 
     # Used for plotting the simulation over time
-    Y_star_time = []
+    Y_time = []
+    C_time = []
+    I_time = []
+
     # Append initial value
-    Y_star_time.append(Y)
+    Y_time.append(Y)
+    C_time.append(C)
+    I_time.append(I)
 
     while in_sim and running:
 
@@ -166,8 +171,9 @@ for sim_no in range(S):
                 P_star[sim_no] = P
                 rn_star[sim_no] = rn
 
-
-                Y_star_time.append(Y)
+                C_time.append(C)
+                I_time.append(I)
+                Y_time.append(Y)
                 iteration_count += 1
                 # Wait for next iteration from player
                 is_iter = False
@@ -192,7 +198,8 @@ for sim_no in range(S):
             screen.blit(iter_text_surface, (50, 600)) 
 
             if (iteration_count > 0):
-                plt.plot(Y_star_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
+                # Plot output
+                plt.plot(Y_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
                 plt.xlabel("Time")
                 plt.ylabel("Y")
                 plt_title = scenario_names[sim_no] + ": Output"
@@ -209,6 +216,44 @@ for sim_no in range(S):
 
                 surf = pygame.image.fromstring(raw_data, size, "RGB")
                 screen.blit(surf, (800,0))
+
+                # Plot consumption
+                plt.plot(C_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
+                plt.xlabel("Time")
+                plt.ylabel("Consumption")
+                plt_title = scenario_names[sim_no] + ": Consumption"
+                plt.title(plt_title, fontsize=10)
+                fig = plt.figure(plt_title)
+                fig.set_size_inches(4, 3)
+
+                canvas = agg.FigureCanvasAgg(fig)
+                canvas.draw()
+                renderer = canvas.get_renderer()
+                raw_data = renderer.tostring_rgb()
+
+                size = canvas.get_width_height()
+
+                surf = pygame.image.fromstring(raw_data, size, "RGB")
+                screen.blit(surf, (900,400))
+
+                # Plot investment
+                plt.plot(I_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
+                plt.xlabel("Time")
+                plt.ylabel("Investment")
+                plt_title = scenario_names[sim_no] + ": Investment"
+                plt.title(plt_title, fontsize=10)
+                fig = plt.figure(plt_title)
+                fig.set_size_inches(4, 3)
+
+                canvas = agg.FigureCanvasAgg(fig)
+                canvas.draw()
+                renderer = canvas.get_renderer()
+                raw_data = renderer.tostring_rgb()
+
+                size = canvas.get_width_height()
+
+                surf = pygame.image.fromstring(raw_data, size, "RGB")
+                screen.blit(surf, (450,400))
             ##########################
 
             # flip() the display to put your work on screen

@@ -11,7 +11,41 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r}
-plot(pressure)
+rm(list=ls(all=TRUE))
+
+# Set number of parameterisations that will be considered
+S=2
+
+# Set fixed parameter values
+c0=3
+c1=0.8
+
+#Create vector in which equilibrium solutions from different parameterisations will be stored
+Y_eq=vector(length=S)
+C_eq=vector(length=S)
+
+#Create vector with parameter that will change 
+I0=vector(length=S)
+I0[1]=5
+I0[2]=6
+
+# Initialise endogenous variables at arbitrary positive value 
+Y=C=1
+
+#Solve this system numerically through 500 iterations based on the initialisation
+for (i in 1:S){
+  for (iteration in 1:500){
+  Y = C + I0[i]
+  C = c0 + c1*Y
+  } # close iterations loop
+  
+#Save results for different parameterisations in vector
+Y_eq[i]=Y
+C_eq[i]=C
+} # close parameterisations loop
+
+# Display solutions
+Y_eq
 ```
 
 
