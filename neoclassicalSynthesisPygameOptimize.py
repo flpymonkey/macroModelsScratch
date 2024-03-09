@@ -1,17 +1,21 @@
 import pygame
 import numpy as np
+import math
 
 ##################
 # pygame setup
 ##################
 pygame.init()
-screen = pygame.display.set_mode((1720, 980))
+screen = pygame.display.set_mode((1280, 780))
 clock = pygame.time.Clock()
 running = True
 dt = 0
 
 # Fonts
-my_font = pygame.font.SysFont('Comic Sans MS', 30)
+my_font = pygame.font.SysFont('Comic Sans MS', 14)
+font_color = (0, 0, 0)
+
+soft_blue = pygame.Color(173, 216, 230)  # R: 173, G: 216, B: 230
 ##################
 
 
@@ -133,11 +137,11 @@ def iterate_economy(C, I, G0, c0, c1, Y, T0, i0, i1, r, m0, M0, P, m2, m1, N, Nf
 
 # Enable this to automatically iterate
 AUTO_ITERATIOM = True
+if (AUTO_ITERATIOM):
+    pygame.time.set_timer(pygame.USEREVENT, 500)
 
 # Maximum number of iterations to display in each graph
-MAX_PLOT_LENGTH = 50
-
-
+MAX_PLOT_LENGTH = 100
 
 # Count number of iterations for this simulation
 iteration_count = 0
@@ -170,6 +174,8 @@ while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
     for event in pygame.event.get():
+        if event.type == pygame.USEREVENT:
+            is_iter = True
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
@@ -202,7 +208,7 @@ while running:
                 M0 -= 0.1
         
         # Player has triggered an iteration
-        if is_iter or AUTO_ITERATIOM:
+        if is_iter:
             # Run economy updates
             Y, C, I, r, U, w, W, P, N = iterate_economy(C, I, G0, c0, c1, Y, T0, i0, i1, r, m0, M0, P, m2, m1, N, Nf, A, a, K, P0, b)
             # Save results for different parameterizations in the arrays
@@ -227,12 +233,12 @@ while running:
 
             # Rerender the graph images
             ## TODO need to fix these ugly plots!!!!!!!!
-            # Plot output
+            # # Plot output
             plt.plot(Y_time, color='black', linewidth=2, linestyle='-')
             plt.xlabel("Time")
             plt.ylabel("Y")
             plt_title = scenario_name + ": Output"
-            plt.title(plt_title, fontsize=10)
+            plt.title(plt_title, fontsize=15)
             plt.xlim((plot_min, plot_max))
             fig = plt.figure(plt_title)
             fig.set_figwidth(5)
@@ -245,15 +251,16 @@ while running:
 
             size = canvas.get_width_height()
             output_surf = pygame.image.fromstring(raw_data, size, "RGB")
+            output_surf = pygame.transform.scale(output_surf, (400, 360))
             # Clear the plot
             plt.clf()
 
-                # Plot consumption
+            # Plot consumption
             plt.plot(C_time, color='black', linewidth=2, linestyle='-')
             plt.xlabel("Time")
             plt.ylabel("Consumption")
             plt_title = scenario_name + ": Consumption"
-            plt.title(plt_title, fontsize=10)
+            plt.title(plt_title, fontsize=15)
             plt.xlim((plot_min, plot_max))
             fig = plt.figure(plt_title)
             fig.set_figwidth(5)
@@ -266,6 +273,7 @@ while running:
 
             size = canvas.get_width_height()
             consumption_surf = pygame.image.fromstring(raw_data, (size), "RGB")
+            consumption_surf = pygame.transform.scale(consumption_surf, (400, 360))
             # Clear the plot
             plt.clf()
 
@@ -274,7 +282,7 @@ while running:
             plt.xlabel("Time")
             plt.ylabel("Investment")
             plt_title = scenario_name + ": Investment"
-            plt.title(plt_title, fontsize=10)
+            plt.title(plt_title, fontsize=15)
             plt.xlim((plot_min, plot_max))
             fig = plt.figure(plt_title)
             fig.set_figwidth(5)
@@ -297,7 +305,7 @@ while running:
             plt.xlabel("Time")
             plt.ylabel("Price")
             plt_title = scenario_name + ": Price"
-            plt.title(plt_title, fontsize=10)
+            plt.title(plt_title, fontsize=15)
             plt.xlim((plot_min, plot_max))
             fig = plt.figure(plt_title)
             fig.set_figwidth(5)
@@ -320,7 +328,7 @@ while running:
             plt.xlabel("Time")
             plt.ylabel("Employment")
             plt_title = scenario_name + ": Employment"
-            plt.title(plt_title, fontsize=10)
+            plt.title(plt_title, fontsize=15)
             plt.xlim((plot_min, plot_max))
             fig = plt.figure(plt_title)
             fig.set_figwidth(5)
@@ -343,39 +351,38 @@ while running:
             is_iter = False
 
         # fill the screen with a color to wipe away anything from last frame
-        screen.fill("purple")
+        screen.fill(soft_blue)
 
         #########################
         # Update economic visuals
         #########################
-
         # Add simple text
-        iterate_text_surface = my_font.render('Press the space bar to iterate the economy', True, (255, 255, 255))
-        sim_text_surface = my_font.render(scenario_name, True, (255, 255, 255))
-        Y_text_surface = my_font.render('Y: ' + str(Y_star), True, (255, 255, 255))
-        i0_text_surface = my_font.render('Autonomous investment: ' + str(i0), True, (255, 255, 255))
-        A_text_surface = my_font.render('Productivity shifter: ' + str(A), True, (255, 255, 255))
-        G0_text_surface = my_font.render('Government expenditure: ' + str(G0), True, (255, 255, 255))
-        M0_text_surface = my_font.render('Money supply: ' + str(M0), True, (255, 255, 255))
-        iter_text_surface = my_font.render('Iteration number: ' + str(iteration_count), True, (255, 255, 255))
+        iterate_text_surface = my_font.render('Press the space bar to iterate the economy', True, font_color)
+        sim_text_surface = my_font.render(scenario_name, True, font_color)
+        Y_text_surface = my_font.render('Y: ' + str(Y_star), True, font_color)
+        i0_text_surface = my_font.render('Autonomous investment: ' + str(math.ceil(i0 * 100) / 100), True, font_color)
+        A_text_surface = my_font.render('Productivity shifter: ' + str(math.ceil(A * 100) / 100), True, font_color)
+        G0_text_surface = my_font.render('Government expenditure: ' + str(math.ceil(G0 * 100) / 100), True, font_color)
+        M0_text_surface = my_font.render('Money supply: ' + str(math.ceil(M0 * 100) / 100), True, font_color)
+        iter_text_surface = my_font.render('Iteration number: ' + str(iteration_count), True, font_color)
 
         # Render text on the page at the specified positions
-        screen.blit(iterate_text_surface, (50, 10)) 
-        screen.blit(sim_text_surface, (50, 100)) 
-        screen.blit(Y_text_surface, (50, 150))
-        screen.blit(i0_text_surface, (50, 200))
-        screen.blit(A_text_surface, (50, 250))
-        screen.blit(G0_text_surface, (50, 300)) 
-        screen.blit(M0_text_surface, (50, 350)) 
-        screen.blit(iter_text_surface, (50, 600)) 
+        screen.blit(iterate_text_surface, (20, 10)) 
+        screen.blit(sim_text_surface, (20, 50)) 
+        screen.blit(Y_text_surface, (20, 100))
+        screen.blit(i0_text_surface, (20, 150))
+        screen.blit(A_text_surface, (20, 200))
+        screen.blit(G0_text_surface, (20, 250)) 
+        screen.blit(M0_text_surface, (20, 300)) 
+        screen.blit(iter_text_surface, (20, 400)) 
 
         if (iteration_count > 0):
-            # add the graph images to the screen
-            screen.blit(output_surf, (1200,0))
-            screen.blit(consumption_surf, (1200,400))
-            screen.blit(investment_surf, (800,0))
+            #add the graph images to the screen
+            screen.blit(output_surf, (400,0))
+            screen.blit(consumption_surf, (800,0))
+            screen.blit(investment_surf, (400,360))
             screen.blit(price_surf, (800,360))
-            screen.blit(employment_surf, (400,350))
+            screen.blit(employment_surf, (0,420))
         ##########################
 
         # flip() the display to put your work on screen
