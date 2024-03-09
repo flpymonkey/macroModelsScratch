@@ -99,7 +99,33 @@ Y = C = I = r = P = w = N = W = 1
 # https://macrosimulation.org/a_neoclassical_synthesis_model_is_lm_as_ad#directed-graph
 ##################
 
-def iterate_economy(sim_no, C, I, G0, c0, c1, Y, T0, i0, i1, r, M0, P, m2, m1, N, Nf, A, a, K, P0, b):
+def iterate_economy(sim_no, C, I, G0, c0, c1, Y, T0, i0, i1, r, m0, M0, P, m2, m1, N, Nf, A, a, K, P0, b):
+        '''
+        sim_no: Simulation number (for saving simulation states in different scenarios)
+        C: Consumption
+        I: Investment
+        G0: Government expendeture
+        c0: Autonomous consumption
+        c1: Sensitivity of consumption with respect to income (marginal propensity to consume)
+        Y: Output of the economy
+        T0: Tax revenues
+        i0: Autonomous investment (animal spirits)
+        i1: Sensitivity of investment with respect to the interest rate
+        r: Real intrest rate
+        m0: Liquidity prefrence
+        M0: Money supply
+        P: Price level
+        m2: Sensitivity of money demand with respect to interest rate
+        m1: Sensitivity of money demand with respect to income
+        N: Employment 
+        Nf: Full employment/labor force
+        A: Productivity shifter (technology)
+        a: Capital elasticity of output
+        K: Exogenous capital stock
+        P0: Expected price level
+        b: Household preference for leisure
+        '''
+                
         # Model equations
         # Goods market equilibrium
         Y = C + I + G0[sim_no]
@@ -130,6 +156,12 @@ def iterate_economy(sim_no, C, I, G0, c0, c1, Y, T0, i0, i1, r, M0, P, m2, m1, N
 
         return Y, C, I, r, U, w, W, P, N
 
+# Enable this to automatically iterate
+AUTO_ITERATIOM = True
+
+# Maximum number of iterations to display in each graph
+MAX_PLOT_LENGTH = 50
+
 for sim_no in range(S):
 
     # User is closing pygame
@@ -154,6 +186,13 @@ for sim_no in range(S):
     N_time.append(N)
     C_time.append(C)
     I_time.append(I)
+
+    # graph images to render
+    employment_surf = None
+    price_surf = None
+    output_surf = None
+    consumption_surf = None
+    investment_surf = None
 
     while in_sim and running:
 
@@ -196,9 +235,9 @@ for sim_no in range(S):
                     M0[sim_no] -= 0.1
             
             # Player has triggered an iteration
-            if is_iter:
+            if is_iter or AUTO_ITERATIOM:
                 # Run economy updates
-                Y, C, I, r, U, w, W, P, N = iterate_economy(sim_no, C, I, G0, c0, c1, Y, T0, i0, i1, r, M0, P, m2, m1, N, Nf, A, a, K, P0, b)
+                Y, C, I, r, U, w, W, P, N = iterate_economy(sim_no, C, I, G0, c0, c1, Y, T0, i0, i1, r, m0, M0, P, m2, m1, N, Nf, A, a, K, P0, b)
                 # Save results for different parameterizations in the arrays
                 Y_star[sim_no] = Y
                 w_star[sim_no] = w
@@ -214,6 +253,125 @@ for sim_no in range(S):
                 I_time.append(I)
                 Y_time.append(Y)
                 iteration_count += 1
+
+                ###########################
+                plot_min = max(0, iteration_count - MAX_PLOT_LENGTH)
+                plot_max = iteration_count
+
+                # Rerender the graph images
+                ## TODO need to fix these ugly plots!!!!!!!!
+                # Plot output
+                plt.plot(Y_time, color='black', linewidth=2, linestyle='-')
+                plt.xlabel("Time")
+                plt.ylabel("Y")
+                plt_title = scenario_names[sim_no] + ": Output"
+                plt.title(plt_title, fontsize=10)
+                plt.xlim((plot_min, plot_max))
+                fig = plt.figure(plt_title)
+                fig.set_figwidth(5)
+                fig.set_figheight(4)
+
+                canvas = agg.FigureCanvasAgg(fig)
+                canvas.draw()
+                renderer = canvas.get_renderer()
+                raw_data = renderer.tostring_rgb()
+
+                size = canvas.get_width_height()
+                output_surf = pygame.image.fromstring(raw_data, size, "RGB")
+                # Clear the plot
+                plt.clf()
+
+                 # Plot consumption
+                plt.plot(C_time, color='black', linewidth=2, linestyle='-')
+                plt.xlabel("Time")
+                plt.ylabel("Consumption")
+                plt_title = scenario_names[sim_no] + ": Consumption"
+                plt.title(plt_title, fontsize=10)
+                plt.xlim((plot_min, plot_max))
+                fig = plt.figure(plt_title)
+                fig.set_figwidth(5)
+                fig.set_figheight(4)
+
+                canvas = agg.FigureCanvasAgg(fig)
+                canvas.draw()
+                renderer = canvas.get_renderer()
+                raw_data = renderer.tostring_rgb()
+
+                size = canvas.get_width_height()
+                consumption_surf = pygame.image.fromstring(raw_data, (size), "RGB")
+                # Clear the plot
+                plt.clf()
+
+                # Plot investment
+                plt.plot(I_time, color='black', linewidth=2, linestyle='-')
+                plt.xlabel("Time")
+                plt.ylabel("Investment")
+                plt_title = scenario_names[sim_no] + ": Investment"
+                plt.title(plt_title, fontsize=10)
+                plt.xlim((plot_min, plot_max))
+                fig = plt.figure(plt_title)
+                fig.set_figwidth(5)
+                fig.set_figheight(4)
+
+                canvas = agg.FigureCanvasAgg(fig)
+                canvas.draw()
+                renderer = canvas.get_renderer()
+                raw_data = renderer.tostring_rgb()
+
+                size = canvas.get_width_height()
+
+                investment_surf = pygame.image.fromstring(raw_data, size, "RGB")
+                investment_surf = pygame.transform.scale(investment_surf, (400, 360))
+                # Clear the plot
+                plt.clf()
+
+                # Plot price level
+                plt.plot(P_time, color='black', linewidth=2, linestyle='-')
+                plt.xlabel("Time")
+                plt.ylabel("Price")
+                plt_title = scenario_names[sim_no] + ": Price"
+                plt.title(plt_title, fontsize=10)
+                plt.xlim((plot_min, plot_max))
+                fig = plt.figure(plt_title)
+                fig.set_figwidth(5)
+                fig.set_figheight(4)
+
+                canvas = agg.FigureCanvasAgg(fig)
+                canvas.draw()
+                renderer = canvas.get_renderer()
+                raw_data = renderer.tostring_rgb()
+
+                size = canvas.get_width_height()
+
+                price_surf = pygame.image.fromstring(raw_data, size, "RGB")
+                price_surf = pygame.transform.scale(price_surf, (400, 360))
+                # Clear the plot
+                plt.clf()
+
+                # Plot employment level
+                plt.plot(N_time, color='black', linewidth=2, linestyle='-')
+                plt.xlabel("Time")
+                plt.ylabel("Employment")
+                plt_title = scenario_names[sim_no] + ": Employment"
+                plt.title(plt_title, fontsize=10)
+                plt.xlim((plot_min, plot_max))
+                fig = plt.figure(plt_title)
+                fig.set_figwidth(5)
+                fig.set_figheight(4)
+
+                canvas = agg.FigureCanvasAgg(fig)
+                canvas.draw()
+                renderer = canvas.get_renderer()
+                raw_data = renderer.tostring_rgb()
+
+                size = canvas.get_width_height()
+
+                employment_surf = pygame.image.fromstring(raw_data, size, "RGB")
+                employment_surf = pygame.transform.scale(employment_surf, (400, 360))
+                # Clear the plot
+                plt.clf()
+                ##########################
+                
                 # Wait for next iteration from player
                 is_iter = False
 
@@ -245,118 +403,20 @@ for sim_no in range(S):
             screen.blit(iter_text_surface, (50, 600)) 
 
             if (iteration_count > 0):
-
-                ## TODO need to fix these ugly plots!!!!!!!!
-                # Plot output
-                plt.plot(Y_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
-                plt.xlabel("Time")
-                plt.ylabel("Y")
-                plt_title = scenario_names[sim_no] + ": Output"
-                plt.title(plt_title, fontsize=10)
-                fig = plt.figure(plt_title)
-                fig.set_figwidth(5)
-                fig.set_figheight(4)
-
-                canvas = agg.FigureCanvasAgg(fig)
-                canvas.draw()
-                renderer = canvas.get_renderer()
-                raw_data = renderer.tostring_rgb()
-
-                size = canvas.get_width_height()
-
-                surf = pygame.image.fromstring(raw_data, size, "RGB")
-                screen.blit(surf, (1200,0))
-
-                # Plot consumption
-                plt.plot(C_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
-                plt.xlabel("Time")
-                plt.ylabel("Consumption")
-                plt_title = scenario_names[sim_no] + ": Consumption"
-                plt.title(plt_title, fontsize=10)
-                fig = plt.figure(plt_title)
-                fig.set_figwidth(5)
-                fig.set_figheight(4)
-
-                canvas = agg.FigureCanvasAgg(fig)
-                canvas.draw()
-                renderer = canvas.get_renderer()
-                raw_data = renderer.tostring_rgb()
-
-                size = canvas.get_width_height()
-
-                surf = pygame.image.fromstring(raw_data, (size), "RGB")
-                screen.blit(surf, (1200,400))
-
-                # Plot investment
-                plt.plot(I_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
-                plt.xlabel("Time")
-                plt.ylabel("Investment")
-                plt_title = scenario_names[sim_no] + ": Investment"
-                plt.title(plt_title, fontsize=10)
-                fig = plt.figure(plt_title)
-                fig.set_figwidth(5)
-                fig.set_figheight(4)
-
-                canvas = agg.FigureCanvasAgg(fig)
-                canvas.draw()
-                renderer = canvas.get_renderer()
-                raw_data = renderer.tostring_rgb()
-
-                size = canvas.get_width_height()
-
-                surf = pygame.image.fromstring(raw_data, size, "RGB")
-                surf = pygame.transform.scale(surf, (400, 360))
-                screen.blit(surf, (800,0))
-
-                # Plot price level
-                plt.plot(P_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
-                plt.xlabel("Time")
-                plt.ylabel("Price")
-                plt_title = scenario_names[sim_no] + ": Price"
-                plt.title(plt_title, fontsize=10)
-                fig = plt.figure(plt_title)
-                fig.set_figwidth(5)
-                fig.set_figheight(4)
-
-                canvas = agg.FigureCanvasAgg(fig)
-                canvas.draw()
-                renderer = canvas.get_renderer()
-                raw_data = renderer.tostring_rgb()
-
-                size = canvas.get_width_height()
-
-                surf = pygame.image.fromstring(raw_data, size, "RGB")
-                surf = pygame.transform.scale(surf, (400, 360))
-                screen.blit(surf, (800,360))
-
-                # Plot employment level
-                plt.plot(N_time[0:iteration_count], color='black', linewidth=2, linestyle='-')
-                plt.xlabel("Time")
-                plt.ylabel("Employment")
-                plt_title = scenario_names[sim_no] + ": Employment"
-                plt.title(plt_title, fontsize=10)
-                fig = plt.figure(plt_title)
-                fig.set_figwidth(5)
-                fig.set_figheight(4)
-
-                canvas = agg.FigureCanvasAgg(fig)
-                canvas.draw()
-                renderer = canvas.get_renderer()
-                raw_data = renderer.tostring_rgb()
-
-                size = canvas.get_width_height()
-
-                surf = pygame.image.fromstring(raw_data, size, "RGB")
-                surf = pygame.transform.scale(surf, (400, 360))
-                screen.blit(surf, (400,350))
+                # add the graph images to the screen
+                screen.blit(output_surf, (1200,0))
+                screen.blit(consumption_surf, (1200,400))
+                screen.blit(investment_surf, (800,0))
+                screen.blit(price_surf, (800,360))
+                screen.blit(employment_surf, (400,350))
             ##########################
 
             # flip() the display to put your work on screen
             pygame.display.flip()
 
-        # limits FPS to 60
-        # dt is delta time in seconds since last frame, used for framerate-
-        # independent physics.
-        dt = clock.tick(60) / 1000
+            # limits FPS to 60
+            # dt is delta time in seconds since last frame, used for framerate-
+            # independent physics.
+            dt = clock.tick(60) / 1000
 
 pygame.quit()
