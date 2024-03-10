@@ -18,7 +18,7 @@ my_font = pygame.font.SysFont('Comic Sans MS', 30)
 ##################
 # Matplotlib setup
 # Within pygame, see article here:
-# 
+# https://stackoverflow.com/questions/48093361/using-matplotlib-in-pygame
 ##################
 import matplotlib
 matplotlib.use("Agg")

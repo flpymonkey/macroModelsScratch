@@ -156,12 +156,6 @@ def iterate_economy(sim_no, C, I, G0, c0, c1, Y, T0, i0, i1, r, m0, M0, P, m2, m
 
         return Y, C, I, r, U, w, W, P, N
 
-# Enable this to automatically iterate
-AUTO_ITERATIOM = True
-
-# Maximum number of iterations to display in each graph
-MAX_PLOT_LENGTH = 50
-
 for sim_no in range(S):
 
     # User is closing pygame
@@ -235,7 +229,7 @@ for sim_no in range(S):
                     M0[sim_no] -= 0.1
             
             # Player has triggered an iteration
-            if is_iter or AUTO_ITERATIOM:
+            if is_iter:
                 # Run economy updates
                 Y, C, I, r, U, w, W, P, N = iterate_economy(sim_no, C, I, G0, c0, c1, Y, T0, i0, i1, r, m0, M0, P, m2, m1, N, Nf, A, a, K, P0, b)
                 # Save results for different parameterizations in the arrays
@@ -255,7 +249,7 @@ for sim_no in range(S):
                 iteration_count += 1
 
                 ###########################
-                plot_min = max(0, iteration_count - MAX_PLOT_LENGTH)
+                plot_min = 0
                 plot_max = iteration_count
 
                 # Rerender the graph images
